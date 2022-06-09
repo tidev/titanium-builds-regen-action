@@ -1,0 +1,11 @@
+name: 'Titanium Builds Regen Action'
+author: 'Chris Barber'
+description: 'Retrieves Titanium releases, branches, and branch builds'
+inputs:
+  output-dir:
+    description: 'The relative path to write the JSON files to'
+  repo-token:
+    description: 'The GitHub token'
+runs:
+  using: 'node16'
+  main: './index.js'
