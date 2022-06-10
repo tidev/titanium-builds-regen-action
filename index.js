@@ -128,7 +128,7 @@ async function getBranchBuilds(branch) {
 							assets.push({
 								os: m[4],
 								size: a.size_in_bytes,
-								url: a.archive_download_url
+								url: `https://nightly.link/tidev/titanium_mobile/actions/runs/${id}/${a.name}.zip`
 							});
 						}
 					}

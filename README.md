@@ -8,21 +8,44 @@ containing Titanium SDK releases, branches, and branch builds.
 In your project repo, create the file: `.github/workflows/regen-builds.yml`
 
 ```yaml
-name: Regen Builds
+name: 'Regen Builds'
+
 on:
-  - pull_request
+  workflow_dispatch:
+  repository_dispatch:
+    types: [ regen-builds ]
 
 jobs:
-  check-cla:
+  regen:
     runs-on: ubuntu-latest
-    name: Regenerate build
 
     steps:
-    - name: Retrieve the builds
-      uses: tidev/titanium-builds-regen-action@v1
-      with:
-        output-dir: 'registry'
-        repo-token: ${{ secrets.GITHUB_TOKEN }}
+      # third-party action that cancels previous runs
+      - name: Cancel Previous Runs
+        uses: styfle/cancel-workflow-action@0.4.0
+        with:
+          access_token: ${{ github.token }}
+
+      - name: Checkout titanium-builds
+        uses: actions/checkout@v3
+
+      - name: Retrieve the builds
+        uses: tidev/titanium-builds-regen-action@v1
+        with:
+          output-dir: 'public/registry'
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Commit changes
+        id: committed
+        uses: stefanzweifel/git-auto-commit-action@v4
+
+      - name: Repository Dispatch
+        if: steps.committed.outputs.changes_detected == 'true'
+        uses: peter-evans/repository-dispatch@v2
+        with:
+          event-type: deploy
+          token: ${{ secrets.REGEN_BUILDS_DOCS_GITHUB_TOKEN }}
+
 ```
 
 ## Releasing a new version
