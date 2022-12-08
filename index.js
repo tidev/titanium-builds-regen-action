@@ -146,6 +146,8 @@ async function getBranchBuilds(branch) {
 				}
 			}
 		}
+		
+		await new Promise(resolve => setTimeout(resolve, 1000));
 	}
 	return builds;
 }
@@ -181,6 +183,7 @@ async function getReleases() {
 				}
 			}
 		}
+		await new Promise(resolve => setTimeout(resolve, 1000));
 	}
 	for (const r of Object.values(releases)) {
 		r.sort((a, b) => semver.rcompare(a.version, b.version));
