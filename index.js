@@ -74,13 +74,14 @@ const legacyBranches = new Set([
 ]);
 
 const branchesFile = path.join(outputDir, 'branches.json');
-const branchList = (await getBranches()).filter(branch => !legacyBranches.has(branch));
+const allBranchesList = await getBranches();
+const branchList = allBranchesList.filter(branch => !legacyBranches.has(branch));
 const branches = branchList
 	.reduce((obj, branch) => {
 		obj[branch] = 0;
 		return obj;
 	}, fs.readJsonSync(branchesFile));
-console.log(`${Object.keys(allBranches).length} branches (${Object.keys(branches).length} being refreshed)`);
+console.log(`${allBranchesList.length} branches (${Object.keys(branches).length} being refreshed)`);
 
 for (const [ type, releases ] of Object.entries(await getReleases())) {
 	console.log(`${releases.length} ${type} releases`);
