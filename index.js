@@ -14,26 +14,89 @@ const startTime = Date.now();
 fs.removeSync(outputDir);
 fs.mkdirsSync(outputDir);
 
+// the following branches will likely never see another release, so no sense
+// making a ton of API calls for data that will never change
+const legacyBranches = new Set([
+	'0_8_X',
+	'0_9_0',
+	'1_4_1',
+	'1_4_X',
+	'1_4_X',
+	'1_4_X',
+	'1_4_X',
+	'1_4_X',
+	'1_4_X',
+	'1_4_X',
+	'1_5_X',
+	'1_6_X',
+	'1_7_X',
+	'1_8_X',
+	'2_0_X',
+	'2_1_X',
+	'3_0_X',
+	'3_1_X',
+	'3_2_X',
+	'3_3_X',
+	'3_4_1',
+	'3_4_X',
+	'3_5_X',
+	'4_0_X',
+	'4_1_X',
+	'5_0_X',
+	'5_1_1',
+	'5_1_X',
+	'5_2_X',
+	'5_3_X',
+	'5_4_X',
+	'5_5_X',
+	'6_0_X',
+	'6_1_X',
+	'6_2_1',
+	'6_2_X',
+	'6_3_X',
+	'7_0_X',
+	'7_1_X',
+	'7_2_X',
+	'7_3_X',
+	'7_4_X',
+	'7_5_X',
+	'8_0_X',
+	'8_1_X',
+	'8_2_X',
+	'8_3_X',
+	'9_0_X',
+	'9_1_X',
+	'9_2_X',
+	'9_3_X',
+	'10_0_X',
+	'10_1_X',
+	'11_0_X',
+	'11_1_X'
+]);
+
+const branchesFile = path.join(outputDir, `${branch}.json`);
 const branchList = await getBranches();
-const branches = branchList.reduce((obj, branch) => {
-	obj[branch] = 0;
-	return obj;
-}, {});
+const branches = branchList
+	.filter(branch => !legacyBranches.has(branch))
+	.reduce((obj, branch) => {
+		obj[branch] = 0;
+		return obj;
+	}, fs.readJsonSync(branchesFile));
 console.log(`${branchList.length} branches`);
 
 for (const [ type, releases ] of Object.entries(await getReleases())) {
 	console.log(`${releases.length} ${type} releases`);
-	fs.writeFileSync(path.join(outputDir, `${type}.json`), JSON.stringify(releases, null, 2));
+	fs.outputJsonSync(path.join(outputDir, `${type}.json`), releases, { spaces: 2 });
 }
 
 for (const branch of branchList) {
 	const builds = await getBranchBuilds(branch);
 	branches[branch] = builds.length;
 	console.log(`${builds.length} ${branch} builds`);
-	fs.writeFileSync(path.join(outputDir, `${branch}.json`), JSON.stringify(builds, null, 2));
+	fs.outputJsonSync(branchesFile, builds, { spaces: 2 });
 }
 
-fs.writeFileSync(path.join(outputDir, 'branches.json'), JSON.stringify(branches, null, 2));
+fs.outputJsonSync(path.join(outputDir, 'branches.json'), branches, { spaces: 2 });
 
 console.log(`Completed successfully in ${Math.floor((Date.now() - startTime) / 1000)} seconds!`);
 
