@@ -1,6 +1,6 @@
 {
   "name": "titanium-builds-regen-action",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "description": "Regenerates Titanium SDK releases, branches, and branch builds",
   "exports": "./index.js",
   "type": "module",
