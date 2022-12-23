@@ -81,7 +81,7 @@ const branches = branchList
 		obj[branch] = 0;
 		return obj;
 	}, fs.readJsonSync(branchesFile));
-console.log(`${allBranchesList.length} branches (${Object.keys(branches).length} being refreshed)`);
+console.log(`${allBranchesList.length} branches (${branchList.length} being refreshed)`);
 
 for (const [ type, releases ] of Object.entries(await getReleases())) {
 	console.log(`${releases.length} ${type} releases`);
