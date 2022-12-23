@@ -74,7 +74,7 @@ const legacyBranches = new Set([
 	'11_1_X'
 ]);
 
-const branchesFile = path.join(outputDir, `${branch}.json`);
+const branchesFile = path.join(outputDir, 'branches.json');
 const branchList = await getBranches();
 const branches = branchList
 	.filter(branch => !legacyBranches.has(branch))
@@ -93,10 +93,10 @@ for (const branch of branchList) {
 	const builds = await getBranchBuilds(branch);
 	branches[branch] = builds.length;
 	console.log(`${builds.length} ${branch} builds`);
-	fs.outputJsonSync(branchesFile, builds, { spaces: 2 });
+	fs.outputJsonSync(path.join(outputDir, `${branch}.json`), builds, { spaces: 2 });
 }
 
-fs.outputJsonSync(path.join(outputDir, 'branches.json'), branches, { spaces: 2 });
+fs.outputJsonSync(branchesFile, branches, { spaces: 2 });
 
 console.log(`Completed successfully in ${Math.floor((Date.now() - startTime) / 1000)} seconds!`);
 
