@@ -11,7 +11,6 @@ const gh = getOctokit(token);
 const outputDir = process.env.OUTPUT_DIR || core.getInput('output-dir', { required: true });
 const startTime = Date.now();
 
-fs.removeSync(outputDir);
 fs.mkdirsSync(outputDir);
 
 // the following branches will likely never see another release, so no sense
