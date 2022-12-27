@@ -95,7 +95,7 @@ for (const branch of branchList) {
 	fs.outputJsonSync(path.join(outputDir, `${branch}.json`), builds, { spaces: 2 });
 }
 
-fs.outputJsonSync(branchesFile, allBranches, { spaces: 2 });
+fs.outputJsonSync(branchesFile, branches, { spaces: 2 });
 
 console.log(`Completed successfully in ${Math.floor((Date.now() - startTime) / 1000)} seconds!`);
 
