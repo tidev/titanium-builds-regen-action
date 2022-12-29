@@ -109,6 +109,7 @@ async function getBranches() {
 	const re = /^(\d+)_(\d+)_(\d+|[X])$/;
 
 	for await (const { data } of iterator) {
+		console.log(`Received ${data.length} branches...`);
 		for (const branch of data) {
 			if (branchRE.test(branch.name)) {
 				branches.push(branch.name);
@@ -166,6 +167,7 @@ async function getBranchBuilds(branch) {
 	const builds = [];
 	const now = Date.now();
 	for await (const { data } of iterator) {
+		console.log(`Received ${data.length} branch builds...`);
 		for (const { archived, conclusion, html_url, id, name, status, updated_at } of data) {
 			if (archived || name !== 'Build' || status !== 'completed' || conclusion !== 'success') {
 				continue;
@@ -207,9 +209,9 @@ async function getBranchBuilds(branch) {
 					break;
 				}
 			}
-		}
 		
-		await new Promise(resolve => setTimeout(resolve, 2000));
+			await new Promise(resolve => setTimeout(resolve, 2000));
+		}
 	}
 	return builds;
 }
@@ -226,6 +228,7 @@ async function getReleases() {
 		beta: []
 	};
 	for await (const { data } of iterator) {
+		console.log(`Received ${data.length} releases...`);
 		for (const { assets, published_at, html_url } of data) {
 			for (const a of assets) {
 				const { name, version, label } = parseName(a.name, re);
