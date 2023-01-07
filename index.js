@@ -73,27 +73,52 @@ const legacyBranches = new Set([
 	'11_1_X'
 ]);
 
-const branchesFile = path.join(outputDir, 'branches.json');
-const allBranchesList = await getBranches();
-const branchList = allBranchesList.filter(branch => !legacyBranches.has(branch));
-const branches = branchList
-	.reduce((obj, branch) => {
-		obj[branch] = 0;
-		return obj;
-	}, fs.readJsonSync(branchesFile));
-console.log(`${allBranchesList.length} branches (${branchList.length} being refreshed)`);
-
+console.log('Getting releases...');
 for (const [ type, releases ] of Object.entries(await getReleases())) {
 	console.log(`${releases.length} ${type} releases`);
 	fs.outputJsonSync(path.join(outputDir, `${type}.json`), releases, { spaces: 2 });
 }
+console.log();
 
-for (const branch of branchList) {
-	const builds = await getBranchBuilds(branch);
-	branches[branch] = builds.length;
-	console.log(`${builds.length} ${branch} builds`);
-	fs.outputJsonSync(path.join(outputDir, `${branch}.json`), builds, { spaces: 2 });
+console.log('Getting branches...');
+const branchesFile = path.join(outputDir, 'branches.json');
+const allBranchesList = await getBranches();
+let existingBranches = {};
+
+// if the branches file exists, then assume the legacy branches don't need to
+// be processed
+if (fs.existsSync(branchesFile)) {
+	existingBranches = fs.readJsonSync(branchesFile);
+} else {
+	legacyBranches.clear();
 }
+
+const branchList = allBranchesList.filter(branch => !legacyBranches.has(branch));
+
+const branches = branchList
+	.reduce((obj, branch) => {
+		obj[branch] = 0;
+		return obj;
+	}, existingBranches);
+
+console.log(`Found ${allBranchesList.length} branches`);
+console.log(`Only ${branchList.length} branches need refreshing\n`);
+
+console.log('Getting branch builds...');
+for (const branch of branchList) {
+	const branchFile = path.join(outputDir, `${branch}.json`);
+	const branchExpiredFile = path.join(outputDir, `${branch}.expired.json`);
+	const existingBuilds = fs.existsSync(branchFile) ? fs.readJsonSync(branchFile) : [];
+	const existingExpired = fs.existsSync(branchExpiredFile) ? fs.readJsonSync(branchExpiredFile) : [];
+	const { builds, expired } = await getBranchBuilds(branch, existingBuilds, existingExpired);
+
+	branches[branch] = builds.length;
+
+	console.log(`Found ${builds.length} ${branch} builds and ${expired.length} expired branch builds`);
+	fs.outputJsonSync(branchFile, builds, { spaces: 2 });
+	fs.outputJsonSync(branchExpiredFile, expired, { spaces: 2 });
+}
+console.log();
 
 fs.outputJsonSync(branchesFile, branches, { spaces: 2 });
 
@@ -109,7 +134,6 @@ async function getBranches() {
 	const re = /^(\d+)_(\d+)_(\d+|[X])$/;
 
 	for await (const { data } of iterator) {
-		console.log(`Received ${data.length} branches...`);
 		for (const branch of data) {
 			if (branchRE.test(branch.name)) {
 				branches.push(branch.name);
@@ -152,7 +176,7 @@ async function getBranches() {
 	});
 }
 
-async function getBranchBuilds(branch) {
+async function getBranchBuilds(branch, existingBuilds, existingExpired) {
 	const iterator = await gh.paginate.iterator(
 		gh.rest.actions.listWorkflowRunsForRepo,
 		{
@@ -165,18 +189,39 @@ async function getBranchBuilds(branch) {
 	);
 	const re = /^mobilesdk-((\d+\.\d+\.\d+)\.(v\d+))-(\w+)$/;
 	const builds = [];
+	const expired = [];
 	const now = Date.now();
+
 	for await (const { data } of iterator) {
 		console.log(`Received ${data.length} branch builds...`);
 		for (const { archived, conclusion, html_url, id, name, status, updated_at } of data) {
 			if (archived || name !== 'Build' || status !== 'completed' || conclusion !== 'success') {
 				continue;
 			}
+
+			// check if we already fetched the artifact details
+			const existingBuild = existingBuilds.find(b => b.url === html_url);
+			if (existingBuild) {
+				console.log(`Found branch "${branch}" build "${existingBuild.name}", skipping...`)
+				builds.push(existingBuild);
+				continue;
+			}
+
+			// check if we already knew if it was expired
+			const expiredBuild = existingExpired.find(b => b.id === id);
+			if (expiredBuild) {
+				console.log(`Found expired branch "${branch}" build "${expiredBuild.id}", skipping...`)
+				expired.push(expiredBuild);
+				continue;
+			}
+
+			console.log(`Fetching artifacts for branch "${branch}" build run id "${id}"`);
 			const artifacts = await gh.rest.actions.listWorkflowRunArtifacts({
 				owner,
 				repo,
 				run_id: id
 			});
+
 			for (const a of artifacts.data.artifacts) {
 				const { name, version } = parseName(a.name, re);
 				if (name) {
@@ -205,15 +250,20 @@ async function getBranchBuilds(branch) {
 							url: html_url,
 							assets
 						});
+					} else {
+						expired.push({
+							html_url,
+							id
+						});
 					}
 					break;
 				}
 			}
-		
-			await new Promise(resolve => setTimeout(resolve, 2000));
+
+			await new Promise(resolve => setTimeout(resolve, 500));
 		}
 	}
-	return builds;
+	return { builds, expired };
 }
 
 async function getReleases() {
