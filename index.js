@@ -5,7 +5,7 @@ import path from 'path';
 import semver from 'semver';
 
 const owner = 'tidev';
-const repo = 'titanium_mobile';
+const repo = 'titanium-sdk';
 const token = process.env.TOKEN || core.getInput('repo-token', { required: true });
 const gh = getOctokit(token);
 const outputDir = process.env.OUTPUT_DIR || core.getInput('output-dir', { required: true });
@@ -237,7 +237,7 @@ async function getBranchBuilds(branch, existingBuilds, existingExpired) {
 							assets.push({
 								os: m[4],
 								size: a.size_in_bytes,
-								url: `https://nightly.link/tidev/titanium_mobile/actions/runs/${id}/${a.name}.zip`
+								url: `https://nightly.link/tidev/titanium-sdk/actions/runs/${id}/${a.name}.zip`
 							});
 						}
 					}
