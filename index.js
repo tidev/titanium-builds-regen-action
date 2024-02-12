@@ -271,7 +271,7 @@ async function getReleases() {
 		gh.rest.repos.listReleases,
 		{ owner, repo, per_page: 100 }
 	);
-	const re = /^mobilesdk-((\d+\.\d+\.\d+)\.(GA|RC|Beta))-(\w+)\.zip$/;
+	const re = /^mobilesdk-((\d+\.\d+\.\d+)\.(GA|RC\d*|Beta\d*))-(\w+)\.zip$/;
 	const releases = {
 		ga: [],
 		rc: [],
