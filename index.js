@@ -125,7 +125,7 @@ fs.outputJsonSync(branchesFile, branches, { spaces: 2 });
 console.log(`Completed successfully in ${Math.floor((Date.now() - startTime) / 1000)} seconds!`);
 
 async function getBranches() {
-	const branchRE = /^master|\d+_\d+_(\d+|[Xx])$/;
+	const branchRE = /^main|master|\d+_\d+_(\d+|[Xx])$/;
 	const iterator = await gh.paginate.iterator(
 		gh.rest.repos.listBranches,
 		{ owner, repo, per_page: 100 }
@@ -144,7 +144,7 @@ async function getBranches() {
 	return branches.sort((a, b) => {
 		const am = a.toUpperCase().match(re);
 		const bm = b.toUpperCase().match(re);
-	
+
 		// non-version branches
 		if (!am && bm) {
 			return -1;
@@ -155,23 +155,23 @@ async function getBranches() {
 		if (!am && !bm) {
 			return a.localeCompare(b);
 		}
-	
+
 		// major
 		let n = parseInt(bm[1]) - parseInt(am[1]);
 		if (n !== 0) {
 			return n;
 		}
-	
+
 		// minor
 		n = parseInt(bm[2]) - parseInt(am[2]);
 		if (n !== 0) {
 			return n;
 		}
-	
+
 		// patch
 		if (am[3] !== 'X' && bm[3] !== 'X') {
 			return parseInt(bm[3]) - parseInt(am[3]);
-		}	
+		}
 		return am[3] === 'X' ? -1 : bm[3] === 'X' ? 1 : 0;
 	});
 }
